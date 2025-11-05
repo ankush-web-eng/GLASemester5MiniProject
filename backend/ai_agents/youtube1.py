@@ -1,12 +1,13 @@
 from textwrap import dedent
 from phi.assistant import Assistant
-from phi.llm.openai import OpenAIChat
 from phi.tools.youtube_tools import YouTubeTools
 from phi.tools.duckduckgo import DuckDuckGo
-import os
+from azure_openai_patch import AzureOpenAIChat as OpenAIChat
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def youtube_summarizer1(video_url: str) -> dict:
     """
@@ -18,17 +19,12 @@ def youtube_summarizer1(video_url: str) -> dict:
     Returns:
         dict: Contains the generated summary and response time.
     """
-    # Get API key
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    if not openai_api_key:
-        return "Error: API key is not set. Please ensure the environment variables are configured."
 
     # Set up assistants
     caption_fetcher = Assistant(
         name="CaptionFetcher",
         role="Fetches captions from YouTube videos",
-        llm=OpenAIChat(model="gpt-4", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
             You are a Youtube Agent that fetches captions from YouTube videos. Given a YouTube video URL, 
@@ -48,7 +44,7 @@ def youtube_summarizer1(video_url: str) -> dict:
     summarizer = Assistant(
         name="Summarizer",
         role="Summarizes YouTube video captions in detail",
-        llm=OpenAIChat(model="gpt-4", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
             You are an AI that summarizes YouTube video captions in a detailed and insightful way. 
@@ -76,26 +72,21 @@ def youtube_summarizer1(video_url: str) -> dict:
         start_time = time.time()
 
         # Fetch captions
-        caption_results = caption_fetcher.run(
-            f"Youtube Video Link : {video_url}", 
-            stream=False
-        )
+        caption_prompt = f"Youtube Video Link : {video_url}"
+        caption_results = caption_fetcher.llm.run(caption_prompt)
 
         # Generate summary
-        summary = summarizer.run(
-            f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{caption_results}", 
-            stream=False
-        )
+        summary_prompt = f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{caption_results}"
+        summary = summarizer.llm.run(summary_prompt)
 
         # Timing end
         end_time = time.time()
         response_time = end_time - start_time
 
         return {
-            "summary": summary,
+            "summary": summary if isinstance(summary, str) else str(summary),
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
-
+        return {"content": f"An error occurred: {e}", "response_time": None}

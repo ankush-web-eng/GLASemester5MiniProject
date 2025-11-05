@@ -8,8 +8,9 @@ import logging
 from typing import List, Dict
 import google.generativeai as genai
 from llama_parse import LlamaParse
-from resp import evaluate_content
 
+
+from resp import evaluate_content
 from prompt import gen_ai_prompt
 from ai_agents.blog1 import blog1
 from ai_agents.blog2 import blog2
@@ -27,6 +28,9 @@ from ai_agents.youtube1 import youtube_summarizer1
 from ai_agents.youtube2 import youtube_summarizer2
 from ai_agents.youtube3 import youtube_summarizer3
 from ai_agents.youtube4 import youtube_summarizer4
+
+
+# Flask app setup
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -73,7 +77,7 @@ class GeminiResponse:
 class GeminiService:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
 
     def generate_response(self, prompt: str) -> Dict:
         try:
@@ -106,10 +110,21 @@ class GeminiService:
                 is_relevant=False
             ).to_dict()
 
+
+# API Endpoints
+
+# Home route
 @app.route('/', methods=['GET'])
 def index():
     return "Welcome to the AI Content Generation API!"
 
+# Favicon route
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
+
+# Gemini AI route
 @app.route('/gemini', methods=['POST'])
 def gemini():
     if not request.is_json:
@@ -133,14 +148,31 @@ def execute_function(category, entry_id, input_data):
         return {"id": entry_id, "error": f"No function found for category '{category}' and ID {entry_id}"}
     try:
         result = function(input_data)
+        
+        # Fix: if the agent returned a string, wrap it in a dict
+        if isinstance(result, str):
+            result = {"content": result}
+            
+        content = (
+            result.get("blog")
+            or result.get("response")
+            or result.get("itinerary")
+            or result.get("summary")
+            or result.get("content")
+        )
+            
+        print(f"[DEBUG] Result returned: {result}")
+        print(f"[DEBUG] Extracted content: {content}")
+        
         return {
             "id": entry_id,
-            "content": result.get("blog") or result.get("response") or result.get("itinerary") or result.get("summary"),
+            "content": content,
             "response_time": result.get("response_time"),
         }
     except Exception as e:
         return {"id": entry_id, "error": f"Error executing function: {str(e)}"}
 
+# Content Generation route
 @app.route('/generate_content', methods=['POST'])
 def generate_content():
     """Generate content for a list of requests in parallel."""
@@ -206,6 +238,7 @@ def generate_content():
             "error": f"An unexpected error occurred: {str(e)}"
         }), 500
 
+# LlamaParse route
 @app.route('/parse-with-llama', methods=['POST'])
 def parse_with_llama():
     # Get the file from the multipart form data
@@ -249,6 +282,7 @@ def parse_with_llama():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+# Global error handler
 @app.errorhandler(Exception)
 def handle_exception(e):
     """Handle uncaught exceptions."""

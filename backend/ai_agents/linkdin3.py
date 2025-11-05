@@ -28,7 +28,7 @@ def linkedin_post3(post_topic: str) -> dict:
     researcher = Assistant(
         name="Researcher",
         role="Searches for relevant content, trends, and ideas for LinkedIn posts",
-        model=Gemini(id="gemini-1.5-flash"),
+        model=Gemini(id="gemini-2.5-flash"),
         description=dedent(
             """\
             You are a world-class content researcher. Given a LinkedIn post topic and style preferences,
@@ -50,7 +50,7 @@ def linkedin_post3(post_topic: str) -> dict:
     writer = Assistant(
         name="Writer",
         role="Generates a compelling LinkedIn post based on user preferences and research insights",
-        model=Gemini(id="gemini-1.5-flash"),
+        model=Gemini(id="gemini-2.5-flash"),
         description=dedent(
             """\
             You are an expert LinkedIn content writer. Given a LinkedIn post topic, style preferences,

@@ -1,11 +1,13 @@
 from textwrap import dedent
 from phi.assistant import Assistant
 from phi.tools.serpapi_tools import SerpApiTools
-from phi.llm.openai import OpenAIChat
+from azure_openai_patch import AzureOpenAIChat as OpenAIChat
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def linkedin_post1(post_topic: str) -> dict:
     """
@@ -17,18 +19,17 @@ def linkedin_post1(post_topic: str) -> dict:
     Returns:
         dict: Contains the generated post content and response time.
     """
-    # Get API keys
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    # Get SerpApi key
     serp_api_key = os.getenv("SERPER_API_KEY")
 
-    if not openai_api_key or not serp_api_key:
-        return "Error: API keys are not set. Please ensure the environment variables are configured."
+    if not serp_api_key:
+        return "Error: SerpApi key is not set. Please ensure the environment variables are configured."
 
     # Set up assistants
     researcher = Assistant(
         name="Researcher",
         role="Searches for relevant content, trends, and ideas for LinkedIn posts",
-        llm=OpenAIChat(model="gpt-4o", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
             You are a world-class content researcher. Given a LinkedIn post topic and style preferences,
@@ -49,7 +50,7 @@ def linkedin_post1(post_topic: str) -> dict:
     writer = Assistant(
         name="Writer",
         role="Generates a compelling LinkedIn post based on user preferences and research insights",
-        llm=OpenAIChat(model="gpt-4o", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
             You are an expert LinkedIn content writer. Given a LinkedIn post topic, style preferences,
@@ -73,22 +74,21 @@ def linkedin_post1(post_topic: str) -> dict:
     try:
         # Research phase
         start_time = time.time()
-        research_results = researcher.run(
-            f"Topic: {post_topic}\n", stream=False
-        )
+        research_prompt = f"Topic: {post_topic}"
+        research_results = researcher.llm.run(research_prompt)
 
         # Writing phase
-        post_content = writer.run(
-            f"Topic: {post_topic}\n\nResearch: {research_results}",
-            stream=False
-        )
+        post_prompt = f"Topic: {post_topic}\n\nResearch: {research_results}"
+        post_content = writer.llm.run(post_prompt)
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         return {
-            "response": post_content,
+            "response": (
+                post_content if isinstance(post_content, str) else str(post_content)
+            ),
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {e}", "response_time": None}

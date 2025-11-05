@@ -1,12 +1,16 @@
 from textwrap import dedent
+from azure_openai_patch import AzureOpenAIChat as OpenAIChat
 from phi.assistant import Assistant
 from phi.tools.serpapi_tools import SerpApiTools
-from phi.llm.openai import OpenAIChat
 import os
 import time
 from dotenv import load_dotenv
+
+# Load environment variables from .env file
 load_dotenv()
 
+
+# Blog generation function
 def blog1(topic: str) -> str:
     """
     Generates a blog based on the given topic and target audience.
@@ -16,20 +20,19 @@ def blog1(topic: str) -> str:
 
     Returns:
         str: The generated blog post.
-        time: Resposne time
+        time: Response time
     """
-    # Get API keys
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    # Get SerpApi key
     serp_api_key = os.getenv("SERPER_API_KEY")
 
-    if not openai_api_key or not serp_api_key:
-        return "Error: API keys are not set. Please ensure the environment variables are configured."
+    if not serp_api_key:
+        return "Error: SerpApi key is not set. Please ensure the environment variables are configured."
 
     # Set up assistants
     researcher = Assistant(
         name="Researcher",
         role="Conducts research for blog topics and gathers information",
-        llm=OpenAIChat(model="gpt-4o", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
             You are an expert researcher. Given a blog topic, generate a list of search terms, research the topic, 
@@ -47,10 +50,10 @@ def blog1(topic: str) -> str:
     writer = Assistant(
         name="Writer",
         role="Drafts a blog post based on research",
-        llm=OpenAIChat(model="gpt-4o", api_key=openai_api_key),
+        llm=OpenAIChat(),
         description=dedent(
             """\
-            You are a professional blog writer. Use the research data to draft a blog that is engaginga and structured.
+            You are a professional blog writer. Use the research data to draft a blog that is engaging and structured.
             """
         ),
         instructions=[
@@ -63,20 +66,19 @@ def blog1(topic: str) -> str:
     try:
         # Research phase
         start_time = time.time()
-        research_results = researcher.run(f"Topic: {topic}", stream=False)
+        research_prompt = f"Topic: {topic}"
+        research_results = researcher.llm.run(research_prompt)
 
         # Writing phase
-        blog = writer.run(
-                f"Write a blog on the topic '{topic}' using the following research:\n\n{research_results}",
-                stream=False,
-            )
+        blog_prompt = f"Write a blog on '{topic}' using: {research_results}"
+        blog = writer.llm.run(blog_prompt)
         end_time = time.time()
-        response_time = end_time-start_time
-        
+        response_time = end_time - start_time
+
         return {
-            "blog": blog,
+            "content": blog if isinstance(blog, str) else str(blog),
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {e}", "response_time": None}

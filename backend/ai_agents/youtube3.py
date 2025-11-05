@@ -28,7 +28,7 @@ def youtube_summarizer3(video_url: str) -> dict:
     caption_fetcher = Assistant(
         name="CaptionFetcher",
         role="Fetches captions from YouTube videos",
-        model=Gemini(id="gemini-1.5-flash"),
+        model=Gemini(id="gemini-2.5-flash"),
         description=dedent(
             """\
             You are a Youtube Agent that fetches captions from YouTube videos. Given a YouTube video URL, 
@@ -48,7 +48,7 @@ def youtube_summarizer3(video_url: str) -> dict:
     summarizer = Assistant(
         name="Summarizer",
         role="Summarizes YouTube video captions in detail",
-        model=Gemini(id="gemini-1.5-flash"),
+        model=Gemini(id="gemini-2.5-flash"),
         description=dedent(
             """\
             You are an AI that summarizes YouTube video captions in a detailed and insightful way. 
