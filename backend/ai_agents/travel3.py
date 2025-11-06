@@ -28,7 +28,7 @@ def itinerary3(destination: str) -> dict:
     researcher = Assistant(
         name="Researcher",
         role="Searches for travel destinations, activities, and accommodations",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a world-class travel researcher. Given a travel destination,
@@ -49,7 +49,7 @@ def itinerary3(destination: str) -> dict:
     planner = Assistant(
         name="Planner",
         role="Generates a draft itinerary based on the research results",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a professional travel planner. Given a destination and research results, generate a well-structured, engaging itinerary.
@@ -88,4 +88,4 @@ def itinerary3(destination: str) -> dict:
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {str(e)}", "response_time": None}

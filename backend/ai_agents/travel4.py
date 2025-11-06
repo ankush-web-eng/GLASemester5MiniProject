@@ -5,11 +5,13 @@ from phi.llm.groq import Groq
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def itinerary4(destination: str) -> dict:
     """
-    Generates a travel itinerary based on the given destination using Groq Mixtral LLM.
+    Generates a travel itinerary based on the given destination using Groq's llama-3.1-8b-instant model.
 
     Args:
         destination (str): The travel destination.
@@ -28,7 +30,7 @@ def itinerary4(destination: str) -> dict:
     researcher = Assistant(
         name="Researcher",
         role="Searches for travel destinations, activities, and accommodations based on user preferences",
-        llm=Groq(id="mixtral-8x7b-32768"),
+        llm=Groq(model="llama-3.1-8b-instant"),
         description=dedent(
             """\
             You are a world-class travel researcher. Given a travel destination and the number of days the user wants to travel for,
@@ -37,7 +39,7 @@ def itinerary4(destination: str) -> dict:
             """
         ),
         instructions=[
-            "Given a travel destination and the number of days the user wants to travel for, first generate a list of 3 search terms related to that destination and the number of days.",
+            "Given a travel destination and the number of days the user wants to travel for, first generate 3 relevant search terms manually for the given destination and number of days without calling any tool.",
             "For each search term, `search_google` and analyze the results.",
             "From the results of all searches, return the 10 most relevant results to the user's preferences.",
             "Remember: the quality of the results is important.",
@@ -49,7 +51,7 @@ def itinerary4(destination: str) -> dict:
     planner = Assistant(
         name="Planner",
         role="Generates a draft itinerary based on user preferences and research results",
-        llm=Groq(id="mixtral-8x7b-32768"),
+        llm=Groq(model="llama-3.1-8b-instant"),
         description=dedent(
             """\
             You are a senior travel planner. Given a travel destination, the number of days the user wants to travel for, and a list of research results,
@@ -79,15 +81,15 @@ def itinerary4(destination: str) -> dict:
         # Planning phase
         itinerary = planner.run(
             f"Create a travel itinerary for {destination} using the following research:\n\n{research_results}",
-            stream=False
+            stream=False,
         )
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         return {
             "itinerary": itinerary,
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {str(e)}", "response_time": None}

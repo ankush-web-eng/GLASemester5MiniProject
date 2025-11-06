@@ -5,7 +5,9 @@ from phi.llm.groq import Groq
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def blog4(topic: str) -> str:
     """
@@ -28,14 +30,14 @@ def blog4(topic: str) -> str:
     researcher = Assistant(
         name="Researcher",
         role="Searches for blog topics, ideas, and content inspiration based on user preferences",
-        llm=Groq(id="mixtral-8x7b-32768"),
+        llm=Groq(model="llama-3.1-8b-instant"),
         description=dedent(
             """\
             You are a world-class content researcher. Given a blog topic , generate a list of search terms for finding relevant content ideas, trends, and research.
             Then search the web for each term, analyze the results, and return the 10 most relevant content ideas.
             """
         ),
-        instructions=[ 
+        instructions=[
             "Given a blog topic first generate a list of 3 search terms related to the topic.",
             "For each search term, `search_google` and analyze the results.",
             "From the results of all searches, return the 10 most relevant content ideas to the user's audience.",
@@ -48,7 +50,7 @@ def blog4(topic: str) -> str:
     writer = Assistant(
         name="Writer",
         role="Generates a blog post based on user preferences and research results",
-        llm=Groq(id="mixtral-8x7b-32768"),
+        llm=Groq(model="llama-3.1-8b-instant"),
         description=dedent(
             """\
             You are an expert blog writer. Given a blog topic, and a list of content research results,
@@ -80,12 +82,12 @@ def blog4(topic: str) -> str:
         )
 
         end_time = time.time()
-        response_time = end_time-start_time
-        
+        response_time = end_time - start_time
+
         return {
             "blog": blog,
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {str(e)}", "response_time": None}

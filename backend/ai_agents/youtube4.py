@@ -1,6 +1,6 @@
 from textwrap import dedent
+from gemini_patch import GeminiChat as Gemini
 from phi.assistant import Assistant
-from phi.model.google import Gemini
 from phi.tools.youtube_tools import YouTubeTools
 from phi.tools.duckduckgo import DuckDuckGo
 import os
@@ -10,9 +10,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
 def youtube_summarizer4(video_url: str) -> dict:
     """
-    Summarizes a YouTube video based on its captions using Google's Gemini model.
+    Summarizes a YouTube video based on its captions using Google's Gemini 1.5-flash model.
 
     Args:
         video_url (str): The URL of the YouTube video to summarize.
@@ -24,13 +25,15 @@ def youtube_summarizer4(video_url: str) -> dict:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
 
     if not gemini_api_key:
-        return {"error": "API key is not set. Please ensure the environment variables are configured."}
+        return {
+            "error": "API key is not set. Please ensure the environment variables are configured."
+        }
 
     # Set up assistants
     caption_fetcher = Assistant(
         name="CaptionFetcher",
         role="Fetches captions from YouTube videos",
-        model=Gemini(id="gemini-2.5-flash"),
+        llm=Gemini(model="gemini-1.5-flash"),
         description=dedent(
             """\
             You are a YouTube Agent that fetches captions from YouTube videos. Given a YouTube video URL, 
@@ -50,7 +53,7 @@ def youtube_summarizer4(video_url: str) -> dict:
     summarizer = Assistant(
         name="Summarizer",
         role="Summarizes YouTube video captions in detail",
-        model=Gemini(id="gemini-2.5-flash"),
+        llm=Gemini(model="gemini-1.5-flash"),
         description=dedent(
             """\
             You are an AI that summarizes YouTube video captions in a detailed and insightful way. 
@@ -78,16 +81,10 @@ def youtube_summarizer4(video_url: str) -> dict:
         start_time = time.time()
 
         # Fetch captions
-        caption_results = caption_fetcher.run(
-            f"YouTube Video Link : {video_url}", 
-            stream=False
-        )
+        caption_results = caption_fetcher.llm.run(f"YouTube Video Link : {video_url}")
 
         # Generate summary
-        summary = summarizer.run(
-            f"Summarize the YouTube video : {video_url} using the following caption data of the video : \n\n{caption_results}", 
-            stream=False
-        )
+        summary = summarizer.llm.run(f"Summarize the YouTube video : {video_url} using the following caption data of the video : \n\n{caption_results}")
 
         # Timing end
         end_time = time.time()
@@ -99,4 +96,4 @@ def youtube_summarizer4(video_url: str) -> dict:
         }
 
     except Exception as e:
-        return {"error": f"An error occurred: {str(e)}"}
+        return {"error": f"An error occurred: {str(e)}", "response_time": None}

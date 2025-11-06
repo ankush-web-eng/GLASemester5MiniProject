@@ -20,27 +20,7 @@ def youtube_summarizer1(video_url: str) -> dict:
         dict: Contains the generated summary and response time.
     """
 
-    # Set up assistants
-    caption_fetcher = Assistant(
-        name="CaptionFetcher",
-        role="Fetches captions from YouTube videos",
-        llm=OpenAIChat(),
-        description=dedent(
-            """\
-            You are a Youtube Agent that fetches captions from YouTube videos. Given a YouTube video URL, 
-            fetch its captions for further analysis. The captions can be in any language. 
-            Don't ask for any confirmation, just give me the captions.
-            """
-        ),
-        instructions=[
-            "No matter what is the captions language, Fetch the captions from the given YouTube video URL.",
-        ],
-        tools=[YouTubeTools(), DuckDuckGo()],
-        add_datetime_to_instructions=True,
-        show_tool_calls=True,
-        get_video_captions=True,
-    )
-
+    # Set up summarizer assistant using Azure OpenAIChat
     summarizer = Assistant(
         name="Summarizer",
         role="Summarizes YouTube video captions in detail",
@@ -61,22 +41,25 @@ def youtube_summarizer1(video_url: str) -> dict:
             "Provide a structured summary that highlights the main themes and conclusions.",
             "Focus on clarity, coherence, and detail in your summary.",
         ],
-        tools=[YouTubeTools(), DuckDuckGo()],
         add_datetime_to_instructions=True,
-        show_tool_calls=True,
-        get_video_captions=True,
     )
 
     try:
         # Timing start
         start_time = time.time()
 
-        # Fetch captions
-        caption_prompt = f"Youtube Video Link : {video_url}"
-        caption_results = caption_fetcher.llm.run(caption_prompt)
+        # Fetch captions using YouTubeTools directly
+        captions = YouTubeTools().get_youtube_video_captions(url=video_url)
+        
+
+        if not captions:
+            return {
+                "summary": "No captions found for the provided video URL.",
+                "response_time": 0,
+            }
 
         # Generate summary
-        summary_prompt = f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{caption_results}"
+        summary_prompt = f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{captions}"
         summary = summarizer.llm.run(summary_prompt)
 
         # Timing end

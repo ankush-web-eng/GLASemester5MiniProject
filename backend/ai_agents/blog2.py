@@ -5,6 +5,7 @@ from phi.llm.groq import Groq
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -29,7 +30,7 @@ def blog2(topic: str) -> str:
     researcher = Assistant(
         name="Researcher",
         role="Searches for blog topic-related information and generates relevant references",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a world-class blog researcher. Given a blog topic , generate a list of search terms for finding relevant articles, research papers, and other resources.
@@ -49,7 +50,7 @@ def blog2(topic: str) -> str:
     writer = Assistant(
         name="Writer",
         role="Generates a draft blog post based on the research results",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a professional blog writer. Given a topic, and research results, generate a well-structured, engaging blog post.
@@ -71,7 +72,9 @@ def blog2(topic: str) -> str:
         # Research phase
         start_time = time.time()
 
-        research_results = researcher.run(f"Research blog topic: {topic} ", stream=False)
+        research_results = researcher.run(
+            f"Research blog topic: {topic} ", stream=False
+        )
 
         # Writing phase
         blog = writer.run(
@@ -80,13 +83,12 @@ def blog2(topic: str) -> str:
         )
 
         end_time = time.time()
-        response_time = end_time-start_time
-        
+        response_time = end_time - start_time
+
         return {
             "blog": blog,
             "response_time": response_time,
         }
 
-
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {e}", "response_time": None}

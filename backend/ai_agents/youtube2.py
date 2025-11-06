@@ -6,7 +6,9 @@ from phi.tools.duckduckgo import DuckDuckGo
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def youtube_summarizer2(video_url: str) -> dict:
     """
@@ -28,7 +30,7 @@ def youtube_summarizer2(video_url: str) -> dict:
     caption_fetcher = Assistant(
         name="CaptionFetcher",
         role="Fetches captions from YouTube videos",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a Youtube Agent that fetches captions from YouTube videos. Given a YouTube video URL, 
@@ -48,7 +50,7 @@ def youtube_summarizer2(video_url: str) -> dict:
     summarizer = Assistant(
         name="Summarizer",
         role="Summarizes YouTube video captions in detail",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are an AI that summarizes YouTube video captions in a detailed and insightful way. 
@@ -77,14 +79,13 @@ def youtube_summarizer2(video_url: str) -> dict:
 
         # Fetch captions
         caption_results = caption_fetcher.run(
-            f"Youtube Video Link : {video_url}", 
-            stream=False
+            f"Youtube Video Link : {video_url}", stream=False
         )
 
         # Generate summary
         summary = summarizer.run(
-            f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{caption_results}", 
-            stream=False
+            f"Summarize the youtube video : {video_url} using the following caption data of the video : \n\n{caption_results}",
+            stream=False,
         )
 
         # Timing end
@@ -97,5 +98,4 @@ def youtube_summarizer2(video_url: str) -> dict:
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
-
+        return {"content": f"An error occurred: {e}", "response_time": None}

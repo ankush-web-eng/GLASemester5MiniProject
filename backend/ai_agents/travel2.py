@@ -5,7 +5,9 @@ from phi.llm.groq import Groq
 import os
 import time
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 def itinerary2(destination: str) -> dict:
     """
@@ -28,9 +30,8 @@ def itinerary2(destination: str) -> dict:
     researcher = Assistant(
         name="Researcher",
         role="Searches for travel destinations, activities, and accommodations based on user preferences",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
-
             """\
             You are a world-class travel researcher. Given a travel destination and the number of days the user wants to travel for,
             generate a list of search terms for finding relevant travel activities and accommodations.
@@ -50,7 +51,7 @@ def itinerary2(destination: str) -> dict:
     planner = Assistant(
         name="Planner",
         role="Generates a draft itinerary based on user preferences and research results",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Groq(model="llama-3.3-70b-versatile"),
         description=dedent(
             """\
             You are a senior travel planner. Given a travel destination, the number of days the user wants to travel for, and a list of research results,
@@ -74,21 +75,22 @@ def itinerary2(destination: str) -> dict:
         # Research phase
         start_time = time.time()
         research_results = researcher.run(
-            f"Search for travel destinations, activities, and accommodations in '{destination}", stream=False
+            f"Search for travel destinations, activities, and accommodations in '{destination}",
+            stream=False,
         )
 
         # Planning phase
         itinerary = planner.run(
             f"Plan a trip for {destination}, using the following research:\n\n{research_results}",
-            stream=False
+            stream=False,
         )
         end_time = time.time()
         response_time = end_time - start_time
-        
+
         return {
             "itinerary": itinerary,
             "response_time": response_time,
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {e}", "response_time": None}

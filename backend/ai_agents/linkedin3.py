@@ -1,15 +1,15 @@
 from textwrap import dedent
+from gemini_patch import GeminiChat as Gemini
 from phi.assistant import Assistant
 from phi.tools.serpapi_tools import SerpApiTools
-from phi.llm.groq import Groq
 import os
 import time
 from dotenv import load_dotenv
 load_dotenv()
 
-def linkedin_post2(post_topic: str) -> dict:
+def linkedin_post3(post_topic: str) -> dict:
     """
-    Generates a LinkedIn post based on the given topic and style preferences using Groq's Llama model.
+    Generates a LinkedIn post based on the given topic using Gemini model.
 
     Args:
         post_topic (str): The topic for the LinkedIn post.
@@ -17,18 +17,17 @@ def linkedin_post2(post_topic: str) -> dict:
     Returns:
         dict: Contains the generated post content and response time.
     """
-    # Get API keys
-    groq_api_key = os.getenv("GROQ_API_KEY")
+    # Get SerpAPI key
     serp_api_key = os.getenv("SERPER_API_KEY")
 
-    if not groq_api_key or not serp_api_key:
-        return "Error: API keys are not set. Please ensure the environment variables are configured."
+    if not serp_api_key:
+        return "Error: SerpAPI key is not set. Please ensure the environment variables are configured."
 
     # Set up assistants
     researcher = Assistant(
         name="Researcher",
         role="Searches for relevant content, trends, and ideas for LinkedIn posts",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Gemini(model="gemini-2.5-flash"),
         description=dedent(
             """\
             You are a world-class content researcher. Given a LinkedIn post topic and style preferences,
@@ -44,12 +43,13 @@ def linkedin_post2(post_topic: str) -> dict:
         ],
         tools=[SerpApiTools(api_key=serp_api_key)],
         add_datetime_to_instructions=True,
+        markdown=True
     )
 
     writer = Assistant(
         name="Writer",
         role="Generates a compelling LinkedIn post based on user preferences and research insights",
-        llm=Groq(id="llama-3.3-70b-versatile"),
+        llm=Gemini(model="gemini-2.5-flash"),
         description=dedent(
             """\
             You are an expert LinkedIn content writer. Given a LinkedIn post topic, style preferences,
@@ -68,20 +68,17 @@ def linkedin_post2(post_topic: str) -> dict:
         add_datetime_to_instructions=True,
         add_chat_history_to_prompt=True,
         num_history_messages=3,
+        markdown=True
     )
 
     try:
         # Research phase
         start_time = time.time()
-        research_results = researcher.run(
-            f"Topic: {post_topic}", stream=False
-        )
+        research_results = researcher.llm.run(f"Research LinkedIn post topic: {post_topic}")
 
         # Writing phase
-        post_content = writer.run(
-            f"Topic: Linkdin Post on {post_topic}\n using the Research: {research_results}",
-            stream=False
-        )
+        post_content = writer.llm.run(f"Create a LinkedIn post on the topic '{post_topic}' using the following research insights:\n\n{research_results}")
+
         end_time = time.time()
         response_time = end_time - start_time
         
@@ -91,4 +88,4 @@ def linkedin_post2(post_topic: str) -> dict:
         }
 
     except Exception as e:
-        return f"An error occurred: {str(e)}"
+        return {"content": f"An error occurred: {str(e)}", "response_time": None}

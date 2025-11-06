@@ -1,7 +1,7 @@
 from textwrap import dedent
+from gemini_patch import GeminiChat as Gemini
 from phi.assistant import Assistant
 from phi.tools.serpapi_tools import SerpApiTools
-from phi.model.google import Gemini
 import os
 import time
 from dotenv import load_dotenv
@@ -18,13 +18,12 @@ def blog3(topic: str) -> dict:
     Returns:
         dict: A dictionary containing the generated blog post and response time.
     """
-    # Get API keys
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    # Get SerpAPI key
     serp_api_key = os.getenv("SERPER_API_KEY")
 
-    if not gemini_api_key or not serp_api_key:
+    if not serp_api_key:
         return {
-            "error": "API keys are not set. Please ensure the environment variables are configured.",
+            "error": "SerpAPI key is not set. Please ensure the environment variables are configured.",
             "blog": None,
             "response_time": None
         }
@@ -33,7 +32,7 @@ def blog3(topic: str) -> dict:
     researcher = Assistant(
         name="Researcher",
         role="Searches for blog topic-related information and generates relevant references",
-        model=Gemini(id="gemini-1.5-flash"),
+        llm=Gemini(model="gemini-2.5-flash"),
         description=dedent(
             """\
             You are a world-class blog researcher. Given a blog topic, generate a list of search terms for finding relevant articles, research papers, and other resources.
@@ -54,7 +53,7 @@ def blog3(topic: str) -> dict:
     writer = Assistant(
         name="Writer",
         role="Generates a draft blog post based on user preferences and research results",
-        model=Gemini(id="gemini-1.5-flash"),
+        llm=Gemini(model="gemini-2.5-flash"),
         description=dedent(
             """\
             You are an expert blog writer. Given a blog topic, style preferences, and a list of content research results,
@@ -80,16 +79,10 @@ def blog3(topic: str) -> dict:
         # Research phase
         start_time = time.time()
         
-        research_results = researcher.run(
-            f"Research blog topic: {topic} ", 
-            stream=False
-        )
+        research_results = researcher.llm.run(f"Research blog topic: {topic}")
 
         # Writing phase
-        blog = writer.run(
-            f"Write a blog on the topic '{topic}'  using the following research:\n\n{research_results}",
-            stream=False,
-        )
+        blog = writer.llm.run(f"Write a blog on '{topic}' using the following research:\n\n{research_results}")
 
         end_time = time.time()
         response_time = end_time - start_time
