@@ -1,7 +1,6 @@
 from textwrap import dedent
 from phi.assistant import Assistant
 from phi.tools.youtube_tools import YouTubeTools
-from phi.tools.duckduckgo import DuckDuckGo
 from azure_openai_patch import AzureOpenAIChat as OpenAIChat
 import time
 from dotenv import load_dotenv

@@ -120,7 +120,7 @@ export default function DataInput() {
 
                     <button
                         className="w-full mt-4 border rounded-xl py-2 px-3 bg-teal-500 text-white hover:bg-teal-600"
-                        disabled={isSubmitDisabled}
+                        disabled={isSubmitDisabled || true} // Temporarily disable the button
                         onClick={handleSubmit}
                     >
                         {isLoading ? 'Processing...' : 'Next'}

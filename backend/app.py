@@ -7,7 +7,7 @@ import json
 import logging
 from typing import List, Dict
 import google.generativeai as genai
-from llama_parse import LlamaParse
+#from llama_parse import LlamaParse
 
 
 from resp import evaluate_content
@@ -310,6 +310,9 @@ def generate_content():
 # LlamaParse route
 @app.route("/parse-with-llama", methods=["POST"])
 def parse_with_llama():
+    return jsonify({"error": "LlamaParse functionality is currently disabled."}), 503   
+
+""" def parse_with_llama():
     # Get the file from the multipart form data
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -349,7 +352,7 @@ def parse_with_llama():
             return jsonify(json_data)
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return jsonify({"error": str(e)}), 500 """
 
 
 # Global error handler
